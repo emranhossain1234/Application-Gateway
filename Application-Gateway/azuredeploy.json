@@ -1,0 +1,144 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "applicationGateways_emran_application_name": {
+      "defaultValue": "emran-application",
+      "type": "String"
+    },
+    "virtualNetworks_emran_vnet_externalid": {
+      "defaultValue": "/subscriptions/6690b014-bdbd-4496-98ee-f2f255699f70/resourceGroups/emran-soniya/providers/Microsoft.Network/virtualNetworks/emran-vnet",
+      "type": "String"
+    },
+    "publicIPAddresses_emran_pip_externalid": {
+      "defaultValue": "/subscriptions/6690b014-bdbd-4496-98ee-f2f255699f70/resourceGroups/emran-soniya/providers/Microsoft.Network/publicIPAddresses/emran-pip",
+      "type": "String"
+    }
+  },
+  "variables": {},
+  "resources": [
+    {
+      "type": "Microsoft.Network/applicationGateways",
+      "apiVersion": "2019-11-01",
+      "name": "[parameters('applicationGateways_emran_application_name')]",
+      "location": "southeastasia",
+      "properties": {
+        "sku": {
+          "name": "Standard_v2",
+          "tier": "Standard_v2"
+        },
+        "gatewayIPConfigurations": [
+          {
+            "name": "appGatewayIpConfig",
+            "properties": {
+              "subnet": {
+                "id": "[concat(parameters('virtualNetworks_emran_vnet_externalid'), '/subnets/default')]"
+              }
+            }
+          }
+        ],
+        "sslCertificates": [],
+        "trustedRootCertificates": [],
+        "frontendIPConfigurations": [
+          {
+            "name": "appGwPublicFrontendIp",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "publicIPAddress": {
+                "id": "[parameters('publicIPAddresses_emran_pip_externalid')]"
+              }
+            }
+          }
+        ],
+        "frontendPorts": [
+          {
+            "name": "port_80",
+            "properties": {
+              "port": 80
+            }
+          }
+        ],
+        "backendAddressPools": [
+          {
+            "name": "emran-backend",
+            "properties": {
+              "backendAddresses": []
+            }
+          }
+        ],
+        "backendHttpSettingsCollection": [
+          {
+            "name": "emran-https",
+            "properties": {
+              "port": 80,
+              "protocol": "Http",
+              "cookieBasedAffinity": "Disabled",
+              "pickHostNameFromBackendAddress": false,
+              "requestTimeout": 20,
+              "probe": {
+                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_emran_application_name')), '/probes/emran-helath')]"
+              }
+            }
+          }
+        ],
+        "httpListeners": [
+          {
+            "name": "emran-listener",
+            "properties": {
+              "frontendIPConfiguration": {
+                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_emran_application_name')), '/frontendIPConfigurations/appGwPublicFrontendIp')]"
+              },
+              "frontendPort": {
+                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_emran_application_name')), '/frontendPorts/port_80')]"
+              },
+              "protocol": "Http",
+              "hostNames": [],
+              "requireServerNameIndication": false
+            }
+          }
+        ],
+        "urlPathMaps": [],
+        "requestRoutingRules": [
+          {
+            "name": "emran-rule",
+            "properties": {
+              "ruleType": "Basic",
+              "httpListener": {
+                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_emran_application_name')), '/httpListeners/emran-listener')]"
+              },
+              "backendAddressPool": {
+                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_emran_application_name')), '/backendAddressPools/emran-backend')]"
+              },
+              "backendHttpSettings": {
+                "id": "[concat(resourceId('Microsoft.Network/applicationGateways', parameters('applicationGateways_emran_application_name')), '/backendHttpSettingsCollection/emran-https')]"
+              }
+            }
+          }
+        ],
+        "probes": [
+          {
+            "name": "emran-helath",
+            "properties": {
+              "protocol": "Http",
+              "host": "emran.com",
+              "path": "/",
+              "interval": 30,
+              "timeout": 30,
+              "unhealthyThreshold": 3,
+              "pickHostNameFromBackendHttpSettings": false,
+              "minServers": 0,
+              "match": {}
+            }
+          }
+        ],
+        "rewriteRuleSets": [],
+        "redirectConfigurations": [],
+        "enableHttp2": false,
+        "autoscaleConfiguration": {
+          "minCapacity": 2,
+          "maxCapacity": 10
+        }
+      }
+    }
+  ]
+}

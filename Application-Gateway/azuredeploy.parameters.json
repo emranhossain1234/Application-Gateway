@@ -1,0 +1,15 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "applicationGateways_emran_application_name": {
+      "value": "emran"
+    },
+    "virtualNetworks_emran_vnet_externalid": {
+      "value": "emran-pip"
+    },
+    "publicIPAddresses_emran_pip_externalid": {
+      "value": "emran-vnet"
+    }
+  }
+}
